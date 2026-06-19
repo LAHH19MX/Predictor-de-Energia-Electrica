@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Predicción de Energía - CCPP</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #97999e;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 24px;
+        }
+        .container {
+            background: #ffffff;
+            border-radius: 14px;
+            padding: 44px 38px;
+            width: 100%;
+            max-width: 480px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+            border: 1px solid #e5e7eb;
+        }
+        h1 {
+            color: #111827;
+            text-align: center;
+            font-size: 24px;
+            font-weight: 700;
+            margin-bottom: 4px;
+        }
+        .subtitle {
+            color: #6b7280;
+            text-align: center;
+            font-size: 13px;
+            font-weight: 400;
+            margin-bottom: 10px;
+        }
+        .tag-wrapper { text-align: center; margin-bottom: 30px; }
+        .model-tag {
+            color: #374151;
+            background: #f3f4f6;
+            border: 1px solid #d1d5db;
+            font-size: 11px;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            padding: 6px 16px;
+            border-radius: 20px;
+            display: inline-block;
+        }
+        .input-group { margin-bottom: 18px; }
+        label {
+            color: #1f2937;
+            font-size: 14px;
+            font-weight: 600;
+            display: block;
+            margin-bottom: 6px;
+        }
+        .unit {
+            color: #9ca3af;
+            font-weight: 400;
+            font-size: 13px;
+        }
+        input[type="text"] {
+            width: 100%;
+            padding: 14px 16px;
+            border: 1.5px solid #d1d5db;
+            border-radius: 8px;
+            background: #f9fafb;
+            color: #111827;
+            font-family: 'Inter', sans-serif;
+            font-size: 15px;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+        input[type="text"]:focus {
+            border-color: #6b7280;
+        }
+        input[type="text"]::placeholder { color: #d1d5db; }
+        .btn {
+            width: 100%;
+            padding: 15px;
+            border: none;
+            border-radius: 8px;
+            background: #111827;
+            color: #ffffff;
+            font-family: 'Inter', sans-serif;
+            font-size: 16px;
+            font-weight: 700;
+            cursor: pointer;
+            margin-top: 12px;
+            transition: background 0.2s;
+        }
+        .btn:hover { background: #1f2937; }
+        .resultado {
+            margin-top: 24px;
+            padding: 22px;
+            border-radius: 10px;
+            background: #f9fafb;
+            border: 1.5px solid #d1d5db;
+            text-align: center;
+            color: #111827;
+            font-size: 28px;
+            font-weight: 700;
+            display: none;
+        }
+        .resultado span {
+            font-size: 13px;
+            font-weight: 500;
+            color: #6b7280;
+            display: block;
+            margin-top: 6px;
+        }
+        .resultado.error {
+            background: #fef2f2;
+            border-color: #fecaca;
+            color: #991b1b;
+        }
+        .resultado.visible { display: block; }
+    </style>
+    <script>
+        function predecir(event) {
+            event.preventDefault();
+            const AT = document.getElementById('AT').value;
+            const V = document.getElementById('V').value;
+            const AP = document.getElementById('AP').value;
+            const RH = document.getElementById('RH').value;
+            const resultado = document.getElementById('resultado');
+
+            fetch('/predict', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: `AT=${AT}&V=${V}&AP=${AP}&RH=${RH}`,
+            })
+            .then(response => response.json())
+            .then(data => {
+                resultado.classList.add('visible');
+                if (data.error) {
+                    resultado.classList.add('error');
+                    resultado.innerText = 'Error: ' + data.error;
+                } else {
+                    resultado.classList.remove('error');
+                    resultado.innerHTML = data.prediccion + ' MW<span>Produccion neta estimada por hora</span>';
+                }
+            })
+            .catch(error => {
+                resultado.classList.add('visible', 'error');
+                resultado.innerText = 'Error en la solicitud.';
+            });
+        }
+    </script>
+</head>
+<body>
+    <div class="container">
+        <h1>Predictor de Energia Electrica</h1>
+        <p class="subtitle">Combined Cycle Power Plant (CCPP)</p>
+        <form onsubmit="predecir(event)">
+            <div class="input-group">
+                <label>Temperatura Ambiente <span class="unit">(C)</span></label>
+                <input type="text" id="AT" placeholder="25.5">
+            </div>
+            <div class="input-group">
+                <label>Vacio de Escape <span class="unit">(cm Hg)</span></label>
+                <input type="text" id="V" placeholder="40.5">
+            </div>
+            <div class="input-group">
+                <label>Presion Atmosferica <span class="unit">(mbar)</span></label>
+                <input type="text" id="AP" placeholder="1013.0">
+            </div>
+            <div class="input-group">
+                <label>Humedad Relativa <span class="unit">(%)</span></label>
+                <input type="text" id="RH" placeholder="75.0">
+            </div>
+            <button type="submit" class="btn">Predecir</button>
+        </form>
+        <div id="resultado" class="resultado"></div>
+    </div>
+</body>
+</html>
